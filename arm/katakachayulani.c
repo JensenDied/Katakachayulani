@@ -722,7 +722,10 @@ void katakachayulani_continue_kacha_propogation() {
     katakachayulani_kacha_organ_propogation();
     katakachayulani_composition_snapshot();
 }
-
+status katakachayulani_can_unequip() {
+    if(owner && query_user())
+        return False;
+}
 //
 // -- Shapeshift / Race / Size change handling --
 //
@@ -1007,6 +1010,7 @@ void configure() {
         Element_Proportion              : 1.0
     ]));
     initialize_attributes();
+    add_hook(Can_Unequip_Item, #'katakachayulani_can_unequip);
 }
 
 string stat(object view) {
@@ -1097,7 +1101,6 @@ void sever_bond() {
 		manager = 0;
         detach_katakachayulani(owner);
 	}
-    owner_extant = 0;
 	bond = 0;
     move(Public_Room("trash"));
 }
