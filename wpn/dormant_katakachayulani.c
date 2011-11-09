@@ -72,7 +72,7 @@ object set_psionic_matrix_bond(object who, object link) {
             ([
                 Message_Content     : ({
                     0, ({ "stare", 0 }), "intently at", ({ 'r', who, this_object() }), "as an {{starry}unseen force}", ({ "move", 0 }),  ({ 'p', this_object() }), "rapidly towads", ({ 'r', 0, who->locate_limb(Limb_Type_Chest) }),
-                    "and reforming as", 'a', katakachayulani,
+                    "and reforming as", katakachayulani,
                 }),
             ]),
         }),
