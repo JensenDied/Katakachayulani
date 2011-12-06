@@ -16,6 +16,7 @@
 #include <specialty.h>
 #include <specialty_access.h>
 
+inherit "/mod/character/energy";
 inherit "/std/item";
 
 #define Force_Attribute_Code(what)       \
@@ -45,7 +46,6 @@ private float max_endurance;
 private float max_spell_points;
 private float spell_points;
 private int capacity;
-private int energy;
 private mapping specialty_access;
 private object owner;
 private string bond;
@@ -965,7 +965,6 @@ void reset() {
     unless(owner)
         return;
     calculate_vitals();
-    Check_Skills_Storage;
     update_specialty_access();
 }
 
@@ -974,13 +973,18 @@ void purge() {
     katakachayulani_reset_info();
 }
 
-void preinit() {
-    ::preinit();
+void data_check(status restoring){
+    item::data_check(restoring);
     Check_Skills_Storage;
     attribute_development ||= allocate(Attributes_Array_Size);
     working_attributes ||= allocate(Attributes_Array_Size);
     attributes ||= allocate(Attributes_Array_Size);
     shapechange = allocate(Katakachayulani_Shapechange_Size);
+    energy::data_check(False);
+}
+
+void preinit() {
+    ::preinit();
 }
 
 status drop() {
@@ -995,7 +999,7 @@ status query_auto_keep(object who) {
 
 void configure() {
     ::configure();
-    set_creator(({ "elronuan" }));
+    set_creator("elronuan");
     alter_identity(([
         Identity_Known_Nouns    : ({ "katakachayulani" }),
         Identity_Known_Color    : "white",
@@ -1089,15 +1093,6 @@ varargs object query_psionic_matrix_user(status remote) {
 	if(!remote && environment() != obj)
 		return 0;
 	return obj;
-}
-
-void psionic_matrix_explosion() {
-	message(({ 0, ({ "explode", 0 }), ", releasing a violent psionic shockwave" }));
-	object array targets = filter_objects(all_inventory(environment()) + ({ environment() }), "is_organism");
-	foreach(object targ : targets)
-		if(targ)
-			targ->do_damage(({ 20 + energy / 10 + random(energy / 2), energy / 250 + random(energy / 100) }), bond && find_object(bond), -1, "psionic");
-	remove();
 }
 
 void sever_bond() {
@@ -1292,50 +1287,6 @@ void combat_action(object who, object help, object harm, status def) {
 	}
 }
 
-void check_action() {
-    int act, i, j;
-    mapping exits, inc;
-    string dir, *dirs;
-	object who = query_psionic_matrix_user();
-	if(who) {
-		status esc = False;
-		object targ = who->query_attacker();
-        act = 30;
-		if(targ && random(100) < act && energy > 25) {
-			status def;
-			if(high_skill == Skill_Metasenses || high_skill == Skill_Redaction)
-				def = True;
-			else if(!random(2))
-				def = False;
-			else if(!random(2))
-				def = True;
-			else if(who->query_hp_critical(25) || who->query_mortal_wound())
-				def = True;
-			else if(targ->query_mortal_wound())
-				def = False;
-			else
-				def = random(2) ? True : False;
-			energy -= 25;
-			combat_action(who, who, targ, def);
-		} else if(targ && random(100) < act && energy > 25) {
-			status def;
-			if(high_skill == Skill_Metasenses || high_skill == Skill_Redaction)
-				def = True;
-			else if(!random(2))
-				def = False;
-			else if(!random(2))
-				def = True;
-			else if(who->query_hp_critical(25) || who->query_mortal_wound())
-				def = False;
-			else if(targ->query_mortal_wound())
-				def = True;
-			else
-				def = random(2) ? True : False;
-			combat_action(who, targ, who, def);
-		}
-	}
-}
-
 varargs object set_psionic_matrix_bond(object who, object link) {
     manager = link;
     bond = object_name(who);
@@ -1350,27 +1301,21 @@ string query_psionic_matrix_bond() {
 	return bond;
 }
 
-void set_psionic_matrix_capacity(int val) {
-	capacity = val;
-	if(energy > capacity)
-		energy = capacity;
-}
-
-int query_psionic_matrix_capacity() {
-	return capacity;
+//Psionic Energy.  Functions are wrappers for the psionic matrix interface
+mixed query_psionic_matrix_capacity() {
+    return Energy_Retrieve_Maximum(this_object(), Energy_Psionic);
 }
 
 void set_psionic_matrix_energy(mixed val) {
-	val = max(min(val, capacity), 0);
-	energy = round(val);
+    Energy_Set_Amount(this_object(), Energy_Psionic, val);
 }
 
-int query_psionic_matrix_energy() {
-	return energy;
+mixed query_psionic_matrix_energy() {
+    return Energy_Retrieve_Amount(this_object(), Energy_Psionic);
 }
 
-void add_psionic_matrix_energy(int val) {
-	set_psionic_matrix_energy(query_psionic_matrix_energy() + val);
+void add_psionic_matrix_energy(mixed val) {
+    Energy_Increase_Amount(this_object(), Energy_Psionic, val);
 }
 
 void update_psionic_matrix_skill_information() {
@@ -1400,7 +1345,51 @@ mapping query_psionic_matrix_levels() {
 }
 
 void energy_infusion(int amt) {
-	add_psionic_matrix_energy(amt);
+    add_psionic_matrix_energy(amt);
+}
+
+void check_action() {
+    int act, i, j;
+    mapping exits, inc;
+    string dir, *dirs;
+	object who = query_psionic_matrix_user();
+	if(who) {
+		status esc = False;
+		object targ = who->query_attacker();
+        act = 30;
+		if(targ && random(100) < act && query_psionic_matrix_energy() > 25) {
+			status def;
+			if(high_skill == Skill_Metasenses || high_skill == Skill_Redaction)
+				def = True;
+			else if(!random(2))
+				def = False;
+			else if(!random(2))
+				def = True;
+			else if(who->query_hp_critical(25) || who->query_mortal_wound())
+				def = True;
+			else if(targ->query_mortal_wound())
+				def = False;
+			else
+				def = random(2) ? True : False;
+			add_psionic_matrix_energy(-25);
+			combat_action(who, who, targ, def);
+		} else if(targ && random(100) < act && query_psionic_matrix_energy() > 25) {
+			status def;
+			if(high_skill == Skill_Metasenses || high_skill == Skill_Redaction)
+				def = True;
+			else if(!random(2))
+				def = False;
+			else if(!random(2))
+				def = True;
+			else if(who->query_hp_critical(25) || who->query_mortal_wound())
+				def = False;
+			else if(targ->query_mortal_wound())
+				def = True;
+			else
+				def = random(2) ? True : False;
+			combat_action(who, targ, who, def);
+		}
+	}
 }
 
 void item_restored(object who) {
@@ -1432,8 +1421,8 @@ varargs string query_psionic_matrix_report(object who) {
 	out += "Psionic activity class modifiers:\n";
 	foreach(string key : keys)
 		out += "  " + capitalize(Skill(key)->query_skill_name()) + ": " + map[key] + "\n";
-	out += "Capacity: " + query_psionic_matrix_capacity() + "\n";
-	out += "Energy: " + query_psionic_matrix_energy() + "\n";
+	out += "Capacity: " + printable(query_psionic_matrix_capacity()) + "\n";
+	out += "Energy: " + printable(query_psionic_matrix_energy()) + "\n";
 	out += "Primary capacity: " + Skill(high_skill)->query_skill_name() + "\n";
 	return out;
 }
