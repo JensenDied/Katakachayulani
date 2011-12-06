@@ -723,8 +723,9 @@ void katakachayulani_continue_kacha_propogation() {
     katakachayulani_composition_snapshot();
 }
 status katakachayulani_can_unequip() {
-    if(owner && query_user())
-        return False;
+    if(query_user() && query_user() == owner)
+        return owner->query_disincarnating();
+    return True;
 }
 //
 // -- Shapeshift / Race / Size change handling --
@@ -744,7 +745,7 @@ void katakachayulani_at_race_change(mapping args) {
     //Debug_To(owner, "Shapechange Debug");
     //Debug_To(owner, shapechange);
     unless(Katakachayulani_Shapechange_Query(shapechange, Katakachayulani_Shapechange_When) == time()) {
-        log_file(Katakachayulani_Data("race_change_debug"), printable(owner) + " had race changed without shapechange notification\n" + stack_trace());
+        log_file(Katakachayulani_Data("race_change_debug.log"), printable(owner) + " had race changed without shapechange notification\n" + stack_trace());
         return; // Slight protection against directly calling set_race, logging in-case of misconfigured source.
     }
     unless(Katakachayulani_Shapechange_Flag_Check(shapechange, Katakachayulani_Shapechange_Flag_Valid_Source)) {
@@ -770,7 +771,7 @@ void katakachayulani_at_race_change(mapping args) {
 
 status katakachayulani_is_valid_shapeshift_source(object source) {
     unless(source) {
-        log_file(Katakachayulani_Data("shapechange_source"), "Stack trace, shapechange_prenotify without source\n" + stack_trace() +"\n");
+        log_file(Katakachayulani_Data("shapechange_source.log"), "Stack trace, shapechange_prenotify without source\n" + stack_trace() +"\n");
         return True; // Anything in this log is likely to be marked invalid, true to be safe
     }
     if(source->is_warpstone() || source->is_affiliation_link())
@@ -828,13 +829,15 @@ void katakachayulani_at_skill_experience_add(mapping args) {
             mixed array spec;
             if(Is_Learning_Source(args["sources"]))
                 spec = ({ args["sources"] });
+            if(typeof(args["sources"]) == T_POINTER)
+                spec = args["sources"];
             foreach(descriptor dxr : spec) {
                 unless(Is_Learning_Source(dxr)) {
-                   log_file(Katakachayulani_Data("learning_debug"), "Expected Learning Source, had:" + printable(dxr));
+                   log_file(Katakachayulani_Data("learning_debug.log"), "Expected Learning Source, had:" + printable(dxr));
                     continue;
                 }
                 unless(Is_Learning_Type(dxr[Learning_Source_Type])) {
-                    log_file(Katakachayulani_Data("learning_debug"), "Expected Learning Type, had:" + printable(dxr[Learning_Source_Type]));
+                    log_file(Katakachayulani_Data("learning_debug.log"), "Expected Learning Type, had:" + printable(dxr[Learning_Source_Type]));
                     continue;
                 }
                 switch(typeof(dxr[Learning_Source_Type][Learning_Type_Spec])) {
@@ -847,13 +850,13 @@ void katakachayulani_at_skill_experience_add(mapping args) {
                     source = dxr[Learning_Source_Type][Learning_Type_Spec][0];
                     break;
                 default:
-                    log_file(Katakachayulani_Data("learning_debug"), "Invalid Learning Type Spec: " + printable(dxr[Learning_Source_Type][Learning_Type_Spec]));
+                    log_file(Katakachayulani_Data("learning_debug.log"), "Invalid Learning Type Spec: " + printable(dxr[Learning_Source_Type][Learning_Type_Spec]));
                     break;
                 }
             }
             break;
         default:
-            log_file(Katakachayulani_Data("learning_debug"), "Unhandled source type, sources had: " + printable(args["sources"]));
+            log_file(Katakachayulani_Data("learning_debug.log"), "Unhandled source type, sources had: " + printable(args["sources"]));
         }
     }
     if(args["instructor"] || source && member(({ "memory loss", "memories returning" }), source))
@@ -879,6 +882,8 @@ int katakachayulani_mod_cause_damage(descriptor attack) {
     //if(Attack_Flag_Check(attack, Attack_Flag_Hypothetical) || Attack_Query(attack, Attack_Type) != Attack_Type_Strike)
     //    return 0;
     mixed weapon = Attack_Query(attack, Attack_Weapon);
+    unless(weapon)
+        return 0;// Not item or packed limb.
     unless(Attack_Weapon_Is_Limb(weapon) || weapon->is_armour())
         return 0;
     float mass_factor = katakachayulani_query_mass() - katakachayulani_query_old_mass();
@@ -922,7 +927,6 @@ void katakachayulani_reset_info() {
 //
 
 void attach_katakachayulani(object who) {
-    move(who);
     owner = who;
     owner_extant = owner->require_extant();
     //owner->require_hook(At_Trait_Update, #'katakachayulani_at_trait_update);
@@ -960,6 +964,7 @@ void reset() {
     ::reset();
     unless(owner)
         return;
+    calculate_vitals();
     Check_Skills_Storage;
     update_specialty_access();
 }
@@ -1405,7 +1410,7 @@ void item_restored(object who) {
 		owner_extant ||= bond->require_extant();
 	if(owner_extant)
 		all_inventory(who)->restore_psionic_matrix_bond(this_object(), owner_extant);
-	energy = round(energy);
+    calculate_vitals();
 }
 
 varargs void remove(int flags) {

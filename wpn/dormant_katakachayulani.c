@@ -67,11 +67,12 @@ object set_psionic_matrix_bond(object who, object link) {
         who->deutilize_item(this_object(), True, True);
     move(Public_Room("trash"));
     object katakachayulani = new(Katakachayulani_Armour("katakachayulani"))->set_psionic_matrix_bond(who, link);
+    katakachayulani->move(who, Move_Flags_Force);
     who->message(([
         Message_Content     : ({
             ([
                 Message_Content     : ({
-                    0, ({ "stare", 0 }), "intently at", ({ 'r', who, this_object() }), "as an {{starry}unseen force}", ({ "move", 0 }),  ({ 'p', this_object() }), "rapidly towads", ({ 'r', 0, who->locate_limb(Limb_Type_Chest) }),
+                    0, ({ "stare", 0 }), "intently at", ({ 'r', who, this_object() }), "as an {{starry}unseen force}", ({ "move", 0 }),  ({ 'p', this_object() }), "rapidly towards", ({ 'r', 0, who->locate_limb(Limb_Type_Chest) }),
                     "and reforming as", katakachayulani,
                 }),
             ]),
