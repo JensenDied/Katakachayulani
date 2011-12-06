@@ -1302,6 +1302,29 @@ string query_psionic_matrix_bond() {
 }
 
 //Psionic Energy.  Functions are wrappers for the psionic matrix interface
+mixed query_psionic_energy_conversion_ratio() {
+    int conversion_skill = Energy(Energy_Psionic)->query_energy_conversions()[Energy_Spiritual];
+    return scale_conversion(Condition_Evaluate(Condition(([
+        Condition_Skill_Composite           : True,
+        conversion_skill                    : 1.0,
+        ([
+            Condition_Type_Code             : Condition_Type_Max,
+            Condition_Info                  : ({
+                ([
+                    Condition_Type_Code     : Condition_Type_Attribute,
+                    Condition_Info          : Skill(conversion_skill)->query_skill_attribute(),
+                    Condition_Value         : 1.0,
+                ]),
+                ([
+                    Condition_Type_Code     : Condition_Type_Attribute,
+                    Condition_Info          : Attr_Wil,
+                    Condition_Value         : 0.9,
+                ]),
+            }),
+        ])                                  : True,
+    ])), this_object(), 0), 0, 100, 20, 100) / 100.0;
+}
+
 mixed query_psionic_matrix_capacity() {
     return Energy_Retrieve_Maximum(this_object(), Energy_Psionic);
 }
@@ -1315,7 +1338,13 @@ mixed query_psionic_matrix_energy() {
 }
 
 void add_psionic_matrix_energy(mixed val) {
-    Energy_Increase_Amount(this_object(), Energy_Psionic, val);
+    int conversion_skill = Energy(Energy_Psionic)->query_energy_conversions()[Energy_Spiritual];
+    add_skill_exp(conversion_skill, Learn_Uncommon);
+    val /= Energy(Energy_Psionic)->query_energy_potency();
+    if(val > 0.0) { // Incoming spirit has a conversion penalty applied
+        val *= query_psionic_energy_conversion_ratio();
+    }
+    Energy_Change_Amount(this_object(), Energy_Psionic, val);
 }
 
 void update_psionic_matrix_skill_information() {
@@ -1524,7 +1553,16 @@ private descriptor init_skill(int skill) {
     int req = def->query_skill_specialty_required();
     if(req) {
         descriptor spec = specialty_access[skill];
-        int prov = spec && Specialty_Access_Query(spec, Specialty_Access_Degree);
+        unless(spec) {
+            spec = Specialty_Access(([
+                    Specialty_Access_Degree             : req,
+                    Specialty_Access_Required           : req,
+                    Specialty_Access_Bonus              : req,
+                    Specialty_Access_Recommended        : req,
+                ])),
+            specialty_access[skill] = spec;
+        }
+        int prov = Specialty_Access_Query(spec, Specialty_Access_Degree);
         unless(prov >= req)
             return 0;
         int bon = Specialty_Access_Query(spec, Specialty_Access_Bonus);
@@ -1593,7 +1631,7 @@ varargs void add_skill_exp(mixed what, mixed val, int interval, mixed sources, o
 			if(Learning_Query(dxr, Learning_Experience) <= 0 && !query_specialty_required(what))
 				remove_skill(what);
 		}
-	}
+    }
 }
 
 descriptor array query_specialties_provided() {
