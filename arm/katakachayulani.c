@@ -1459,6 +1459,12 @@ varargs string query_psionic_matrix_report(object who) {
 //
 // -- Skills --
 //
+int query_specialty(mixed skill) {
+    Force_Skill_Code(skill);
+    descriptor dxr = skills[skill];
+    return dxr ? Learning_Query(dxr, Learning_Specialty) : 0;
+}
+
 void set_specialty(mixed what, int val) {
     if(!intp(val) || val < 0)
         check_argument(2, val);
