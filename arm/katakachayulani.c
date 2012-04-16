@@ -1306,8 +1306,8 @@ string query_psionic_matrix_bond() {
 }
 
 //Psionic Energy.  Functions are wrappers for the psionic matrix interface
-mixed query_psionic_energy_conversion_ratio() {
-    int conversion_skill = Energy(Energy_Psionic)->query_energy_conversions()[Energy_Spiritual];
+mixed query_vril_conversion_ratio() {
+    int conversion_skill = Energy(Energy_Vril)->query_energy_conversions()[Energy_Spiritual];
     return scale_conversion(Condition_Evaluate(Condition(([
         Condition_Skill_Composite           : True,
         conversion_skill                    : 1.0,
@@ -1319,36 +1319,27 @@ mixed query_psionic_energy_conversion_ratio() {
                     Condition_Info          : Skill(conversion_skill)->query_skill_attribute(),
                     Condition_Value         : 1.0,
                 ]),
-                ([
-                    Condition_Type_Code     : Condition_Type_Attribute,
-                    Condition_Info          : Attr_Wil,
-                    Condition_Value         : 0.9,
-                ]),
             }),
         ])                                  : True,
     ])), this_object(), 0), 0, 100, 20, 100) / 100.0;
 }
 
 mixed query_psionic_matrix_capacity() {
-    return Energy_Retrieve_Maximum(this_object(), Energy_Psionic);
-}
-
-void set_psionic_matrix_energy(mixed val) {
-    Energy_Set_Amount(this_object(), Energy_Psionic, val);
+    return Energy_Retrieve_Maximum(this_object(), Energy_Vril);
 }
 
 mixed query_psionic_matrix_energy() {
-    return Energy_Retrieve_Amount(this_object(), Energy_Psionic);
+    return Energy_Retrieve_Amount(this_object(), Energy_Vril);
 }
 
 void add_psionic_matrix_energy(mixed val) {
-    int conversion_skill = Energy(Energy_Psionic)->query_energy_conversions()[Energy_Spiritual];
+    int conversion_skill = Energy(Energy_Vril)->query_energy_conversions()[Energy_Spiritual];
     add_skill_exp(conversion_skill, Learn_Uncommon);
-    val /= Energy(Energy_Psionic)->query_energy_potency();
+    val /= Energy(Energy_Vril)->query_energy_potency();
     if(val > 0.0) { // Incoming spirit has a conversion penalty applied
-        val *= query_psionic_energy_conversion_ratio();
+        val *= query_vril_conversion_ratio();
     }
-    Energy_Change_Amount(this_object(), Energy_Psionic, val);
+    Energy_Change_Amount(this_object(), Energy_Vril, val);
 }
 
 void update_psionic_matrix_skill_information() {
@@ -1555,6 +1546,11 @@ int query_skill_maximum(mixed what) {
     Force_Skill_Code(what);
     descriptor dxr = skills[what];
     return Skill_Maximum(dxr && Learning_Query(dxr, Learning_Specialty), what, this_object());
+}
+
+status query_skill_known(mixed what) {
+    Force_Skill_Code(what);
+    return skills[what] && True;
 }
 
 private descriptor init_skill(int skill) {
