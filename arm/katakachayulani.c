@@ -1042,14 +1042,14 @@ string stat(object view) {
                     return True;
             return False;
         :));
-        out += "{{light blue} -- Specialities -------------- : degree - -------------------}{{teal}\n";
+        out += "{{blue} -- Specialities -------------- : degree ---------------------}\n";
         int previous;
         foreach(descriptor spec : specialties) {
             int degree = Specialty_Query(spec, Specialty_Degree);
             if(previous && degree != previous)
-                out += "    --------------------------- : ----------------------------\n";
+                out += "{{blue}    --------------------------- : ----------------------------}\n";
             previous = degree;
-            out += "    ";
+            out += "{{teal}    ";
             out += (Skill(Specialty_Query(spec, Specialty_Skills)[0])->query_skill_name() + (" " * 50))[0..27];
             out += ": ";
             out += left_justify(printable(degree), 9);
