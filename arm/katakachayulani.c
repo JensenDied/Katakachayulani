@@ -70,6 +70,7 @@ descriptor array query_specialties_provided();
 varargs void update_specialty_access(status op, status silent);
 varargs status calculate_vitals(status exec);
 varargs int query_effective_skill(mixed what, mixed skilled, status unmod, float factor, mapping train, int flags);
+private varargs mapping determine_specialty_access(status silent);
 
 float query_katakachaylani_race_factor() {
     peak_volume ||= ([]);
@@ -966,6 +967,7 @@ void reset() {
         return;
     calculate_vitals();
     update_specialty_access();
+	update_psionic_matrix_skill_information();
 }
 
 // TESTING
@@ -1032,7 +1034,7 @@ string stat(object view) {
     if(sizeof(specialties)) {
         specialties = sort_array(specialties, (:
             if(Specialty_Query($1, Specialty_Degree) < Specialty_Query($2, Specialty_Degree))
-                return True; 
+                return True;
             if(Specialty_Query($1, Specialty_Degree) == Specialty_Query($2, Specialty_Degree))
                 if(Skill(Specialty_Query($1, Specialty_Skills)[0])->query_skill_name() > Skill(Specialty_Query($2, Specialty_Skills)[0])->query_skill_name())
                     return True;
@@ -1422,6 +1424,7 @@ void check_action() {
 }
 
 void item_restored(object who) {
+    Check_Skills_Storage;
     attach_katakachayulani(who);
 	update_psionic_matrix_skill_information();
 	if(bond)
@@ -1558,6 +1561,7 @@ private descriptor init_skill(int skill) {
     descriptor dxr = Learning();
     int req = def->query_skill_specialty_required();
     if(req) {
+        determine_specialty_access(True);
         descriptor spec = specialty_access[skill];
         unless(spec) {
             spec = Specialty_Access(([
@@ -1569,8 +1573,9 @@ private descriptor init_skill(int skill) {
             specialty_access[skill] = spec;
         }
         int prov = Specialty_Access_Query(spec, Specialty_Access_Degree);
-        unless(prov >= req)
+        unless(prov >= req) {
             return 0;
+        }
         int bon = Specialty_Access_Query(spec, Specialty_Access_Bonus);
         int deg = Learning_Query(dxr, Learning_Specialty);
         int assn = Learning_Query(dxr, Learning_Assigned);
@@ -1610,8 +1615,9 @@ varargs void add_skill_exp(mixed what, mixed val, int interval, mixed sources, o
 		return;
 	Force_Skill_Code(what);
 	descriptor dxr = skills[what] || init_skill(what);
-	unless(dxr)
+	unless(dxr) {
 		return;
+    }
 	if(interval && Learning_Query(dxr, Learning_Trained) + interval > time())
 		return;
 	int prev = Learning_Query(dxr, Learning_Level);
