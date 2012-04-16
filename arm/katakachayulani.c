@@ -860,10 +860,12 @@ void katakachayulani_at_skill_experience_add(mapping args) {
             log_file(Katakachayulani_Data("learning_debug.log"), "Unhandled source type, sources had: " + printable(args["sources"]));
         }
     }
-    if(args["instructor"] || source && member(({ "memory loss", "memories returning" }), source))
-        return;
     unless(exp > 0)
         return;
+    if(source && member(({ "memory loss", "memories returning" }), source))
+        return;
+    if(args["instructor"] && exp > 100.0)
+        exp = 100.0;
     add_skill_exp(skill, exp);
 }
 
