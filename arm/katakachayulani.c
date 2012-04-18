@@ -485,8 +485,8 @@ status check_endurance(mixed val) {
     val = to_float(val);
     if(endurance < val)
         return notify_fail(({
-                    0, ({ "are", 0 }), "too tired",
-                    }));
+            0, ({ "are", 0 }), "too tired",
+        }));
     add_endurance(-val);
     return True;
 }
@@ -633,13 +633,11 @@ varargs void katakachayulani_kacha_element_propogation(float restore_vol){
     foreach(descriptor dxr : specs) {
         float conv_vol = min(Element_Query(dxr, Element_Volume), vol);
         dxr = copy(dxr);
-        //dxr[Element_Volume] = conv_vol;
         descriptor new_kacha = owner->transmute_element(dxr, ([
             Element_Type    : Material_Kacha,
             Element_Volume  : conv_vol,
         ]));
     }
-    //Debug_To("elronuan", ({ "vol propogation", vol }));
 }
 
 void katakachayulani_kacha_organ_propogation(){
@@ -742,7 +740,7 @@ status katakachayulani_can_unequip() {
 // NOT kurd, ugiors altar.
 void katakachayulani_at_race_change(mapping args) {
     if(args["who"] != owner || args["race"] == args["previous"])
-        return; // Not important?
+        return;
     //Debug_To(owner, "Shapechange Debug");
     //Debug_To(owner, shapechange);
     unless(Katakachayulani_Shapechange_Query(shapechange, Katakachayulani_Shapechange_When) == time()) {
@@ -751,7 +749,8 @@ void katakachayulani_at_race_change(mapping args) {
     }
     unless(Katakachayulani_Shapechange_Flag_Check(shapechange, Katakachayulani_Shapechange_Flag_Valid_Source)) {
         owner->set_info("Katakachayulani_Left", "race change");
-        owner->remove_affiliation(project_control());
+        owner->set_info("Katakachayulani_Shapechange", shapechange);
+        remove();
         return;
     }
     if(Katakachayulani_Shapechange_Flag_Check(shapechange, Katakachayulani_Shapechange_Flag_Temp_Race)) {
@@ -904,7 +903,7 @@ void katakachayulani_at_update_configuration(mapping args) {
 void katakachayulani_thought_monitor(object who, mixed what, int type, status notify_only) {
     unless(who == owner)
         return;
-    //Katakachayulani_Daemon("mentiation")->query_menations_by_type(type)->(who, what, notify_only);
+    Katakachayulani_Daemon("thoughts")->thought(this_object(), what, type);
     return;
 }
 
