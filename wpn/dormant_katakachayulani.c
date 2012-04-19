@@ -103,7 +103,7 @@ void configure() {
     weapon()->set_ablative(False);
     add_description(Description_Type_Generic);
     add_known_description(({
-        0, ({ "are", 0}), "a remnant of the katakacha psychic gestalt which once severely injuried the Kazarin."
+        ({ 'p', 0 }), ({ "are", 0 }), "a remnant of the katakacha psychic gestalt which once severely injured the Kazarin."
     }));
     add_known_description(({
         ({ 'r', 0, ({ "form", "condition" }) }), "are signs of the trauma suffered after the Kazarin corrupted key elements of the katakacha psychic gestalt"
