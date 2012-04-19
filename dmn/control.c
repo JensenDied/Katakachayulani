@@ -36,7 +36,6 @@ void katakachayulani_new_member(object who, object ctl, object how) {
         who->remove_info("Katakachayulani_Left");
         who->remove_info("Katakachayulani_Left_Time");
     }
-    who->display("Type 'help Katakachayulani' to review known information about your symbiote.");
     log_file("dev/elronuan.kky.join", ctime() + ": " + printable(who) + " Joined");
 }
 
