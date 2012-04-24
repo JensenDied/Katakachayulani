@@ -19,39 +19,6 @@ descriptor array query_affiliation_subjective_specialties(object who) {
     return out;
 }
 */
-string katakachayulani_join(object who, object ctl, object how) {
-	if(member(who->query_affiliations(), ({ "the Kazarak"}))){
-		return "Your Kazar demon is preventing you from forming a bond with a Katakacha.";
-	};
-	return 0;
-}
-
-void katakachayulani_new_member(object who, object ctl, object how) {
-	object rep = how->affiliation_representative();
-    if(who->query_affiliation("the Kazarzeth")){
-        who->remove_affiliation("the Kazarzeth");
-        log_file("dev/elronuan.kky.join", ctime() + ": " + printable(who) + " Left Kazarzeth");
-    }
-	if(who->query_info("Katakachayulani_Left")) {
-        who->remove_info("Katakachayulani_Left");
-        who->remove_info("Katakachayulani_Left_Time");
-    }
-    log_file("dev/elronuan.kky.join", ctime() + ": " + printable(who) + " Joined");
-}
-
-string katakachayulani_leave(object who, object ctl, object how) {
-}
-
-void katakachayulani_left(object who, object ctl, object how) {
-    object rep = how->affiliation_representative();
-    string reason = who->query_info("Katakachayulani_Left");
-    who->set_info("Katakachayulani_Left_Time", time());
-    foreach(object obj : deep_inventory(who))
-        if(begins_with(obj, Katakachayulani_Weapon("")) || begins_with(obj, Katakachayulani_Armour("")))
-            obj->remove();
-    log_file("dev/elronuan.kky.leave", ctime() + ": " + printable(who) + " left: " + reason);
-}
-
 // -- Host composition support functions
 descriptor array katakachayulani_find_appropriate_elements(object who) {
     unless(who)
